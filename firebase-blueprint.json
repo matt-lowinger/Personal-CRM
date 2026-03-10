@@ -1,0 +1,89 @@
+{
+  "entities": {
+    "Contact": {
+      "title": "Contact",
+      "description": "A person in the user's network.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "linkedinUrl": { "type": "string" },
+        "instagramHandle": { "type": "string" },
+        "level": { "type": "string", "enum": ["A", "B", "C", "D"] },
+        "lastInteractionAt": { "type": "string", "format": "date-time" },
+        "nextOutreachAt": { "type": "string", "format": "date-time" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "ownerId": { "type": "string" },
+        "reachOutReason": { "type": "string" },
+        "socialScanStatus": { "type": "string", "enum": ["pending", "scanning", "completed", "failed"] }
+      },
+      "required": ["firstName", "ownerId"]
+    },
+    "Interaction": {
+      "title": "Interaction",
+      "description": "A specific touchpoint with a contact.",
+      "type": "object",
+      "properties": {
+        "contactId": { "type": "string" },
+        "type": { "type": "string", "enum": ["gmail", "linkedin", "whatsapp", "imessage", "instagram", "manual", "rss"] },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "externalId": { "type": "string" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["contactId", "type", "timestamp", "ownerId"]
+    },
+    "Integration": {
+      "title": "Integration",
+      "description": "OAuth and API credentials for external services.",
+      "type": "object",
+      "properties": {
+        "service": { "type": "string", "enum": ["google", "linkedin", "rss"] },
+        "accessToken": { "type": "string" },
+        "refreshToken": { "type": "string" },
+        "expiresAt": { "type": "number" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["service", "ownerId"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "User preferences for outreach frequency.",
+      "type": "object",
+      "properties": {
+        "frequencies": {
+          "type": "object",
+          "properties": {
+            "A": { "type": "number", "description": "Days between outreach for Level A" },
+            "B": { "type": "number" },
+            "C": { "type": "number" },
+            "D": { "type": "number" }
+          }
+        },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["ownerId"]
+    }
+  },
+  "firestore": {
+    "/contacts/{contactId}": {
+      "schema": "Contact",
+      "description": "User contacts"
+    },
+    "/interactions/{interactionId}": {
+      "schema": "Interaction",
+      "description": "Interaction history"
+    },
+    "/integrations/{integrationId}": {
+      "schema": "Integration",
+      "description": "Service credentials"
+    },
+    "/settings/{userId}": {
+      "schema": "Settings",
+      "description": "User settings"
+    }
+  }
+}

@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.ownerId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "matt.lowinger@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidContact(data) {
+      return data.firstName is string && data.firstName.size() > 0 &&
+             data.ownerId == request.auth.uid;
+    }
+
+    function isValidInteraction(data) {
+      return data.contactId is string &&
+             data.type in ['gmail', 'linkedin', 'whatsapp', 'imessage', 'instagram', 'manual', 'rss'] &&
+             data.ownerId == request.auth.uid;
+    }
+
+    // Contacts
+    match /contacts/{contactId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidContact(request.resource.data);
+      allow update: if (isDocOwner() || isAdmin()) && isValidContact(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    // Interactions
+    match /interactions/{interactionId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidInteraction(request.resource.data);
+      allow update: if (isDocOwner() || isAdmin()) && isValidInteraction(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    // Integrations (Strictly owner only)
+    match /integrations/{integrationId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if (isDocOwner() || isAdmin()) && request.resource.data.ownerId == request.auth.uid;
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    // Settings
+    match /settings/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+  }
+}
